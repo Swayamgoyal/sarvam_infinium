@@ -58,6 +58,7 @@
   .b-mic { background: #1f2a40; border: 1px solid #2c3a57; }
   .b-mic.on { background: #b91c1c; border-color: #ef4444; }
   .b-reset { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+  .b-report { grid-column: span 2; background: #0f3b2a; border: 1px solid #166534; color: #bbf7d0; }
   .hint { color: var(--dim); font-size: 11.5px; margin-top: 10px; min-height: 16px; }
   .err { color: #fca5a5; }
 
@@ -162,6 +163,7 @@
       <button class="b-demo" id="btnDemo">▶ Play demo call</button>
       <button class="b-mic" id="btnMic">🎙️ Live mic</button>
       <button class="b-reset" id="btnReset">↺ Reset</button>
+      <button class="b-report" id="btnReport" onclick="downloadReport()" disabled>📄 Evidence report for cybercrime.gov.in</button>
     </div>
     <div class="hint" id="hint">Live mic: put the real call on speaker near the laptop.</div>
   </section>
@@ -209,6 +211,8 @@
     <div class="meta" id="warnMeta"></div>
     <div class="acts">
       <button id="btnReplay">🔊 Replay warning</button>
+      <a href="tel:1930" style="text-decoration:none"><button>📞 Call 1930 cyber helpline</button></a>
+      <button onclick="downloadReport()">📄 Evidence report</button>
       <button class="g" id="btnClose">Close</button>
     </div>
   </div>
@@ -239,7 +243,8 @@ let mic = null;   // {stream, ctx, proc}
 let muted = false;
 
 function fresh() {
-  S = { history: [], risk: 0, series: [], seen: new Set(), evidence: {}, warned: false, start: 0, active: false };
+  S = { history: [], risk: 0, series: [], seen: new Set(), evidence: {}, warned: false, start: 0, active: false,
+        lines: [], scamType: "", warnText: "", warnLang: "", familyText: "", caller: "" };
 }
 
 /* ---------- rendering ---------- */
@@ -299,8 +304,48 @@ function addMsg(d) {
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 function clock() { const s = S.start ? Math.floor((Date.now() - S.start) / 1000) : 0; return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }
 
+function downloadReport() {
+  const now = new Date();
+  const L = [
+    "KAVACH - SCAM CALL EVIDENCE REPORT",
+    "==================================",
+    `Generated     : ${now.toLocaleString("en-IN")}`,
+    `Caller        : ${S.caller || "Unknown"}`,
+    `Call duration : ${clock()}`,
+    `Verdict       : ${S.risk >= THRESH ? "SCAM DETECTED" : S.risk >= 40 ? "SUSPICIOUS" : "No scam detected"} (peak risk ${S.risk}/100)`,
+    `Scam pattern  : ${S.scamType || "-"}`,
+    "",
+    "RED FLAGS (with the caller's exact words)",
+    "-----------------------------------------",
+    ...(S.seen.size ? [...S.seen].map(k => `- ${FLAGS[k][1]}${S.evidence[k] ? `: "${S.evidence[k]}"` : ""}`) : ["- none"]),
+    "",
+    "TIMESTAMPED TRANSCRIPT",
+    "----------------------",
+    ...S.lines.map(l => `[${l.t}] (${l.lang}, risk ${l.risk}) ${l.text}`),
+    "",
+    "ACTION TAKEN BY KAVACH",
+    "----------------------",
+    S.warnText ? `Spoken warning (${S.warnLang}): ${S.warnText}` : "No warning issued.",
+    S.familyText ? `Family alert: ${S.familyText}` : "",
+    "",
+    "NEXT STEPS",
+    "----------",
+    "1. Do NOT share any OTP, PIN or transfer money. Police never arrest anyone over a video call.",
+    "2. Call the National Cyber Crime Helpline: 1930",
+    "3. File a complaint at https://cybercrime.gov.in and attach this report.",
+    "4. Block the number and report it on Sanchar Saathi (Chakshu): https://sancharsaathi.gov.in",
+    "",
+    "Analysis: Saaras v4 (speech-to-text) -> Sarvam-105B (scam reasoning) -> Bulbul v3 (voice warning)",
+  ];
+  const blob = new Blob([L.join("\n")], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `kavach_report_${now.toISOString().slice(0, 16).replace(/[:T]/g, "-")}.txt`;
+  a.click();
+}
+
 function startCall(name, meta) {
-  S.active = true; S.start = Date.now();
+  S.active = true; S.start = Date.now(); S.caller = name;
   $("caller").textContent = name;
   $("phone").classList.add("ringing");
   clearInterval(timerId);
@@ -347,6 +392,10 @@ function playB64(b64) {
 async function handle(d) {
   if (!d || d.skipped || !d.transcript) return;
   S.history.push(d.transcript);
+  S.lines.push({ t: clock(), lang: d.language_code, risk: d.risk, text: d.transcript });
+  if (d.scam_type && d.scam_type !== "None") S.scamType = d.scam_type;
+  if (d.family_alert && !S.familyText) S.familyText = d.family_alert;
+  $("btnReport").disabled = false;
   S.series.push(d.risk);
   S.risk = Math.max(S.risk, d.risk);
   (d.flags || []).forEach(f => S.seen.add(f));
@@ -360,6 +409,7 @@ async function handle(d) {
   }
   if (d.warning_audio && !S.warned) {
     S.warned = true;
+    S.warnText = d.warning; S.warnLang = d.warn_lang;
     lastWarning = d.warning_audio;
     $("warnTxt").textContent = d.warning;
     $("warnMeta").textContent = `${d.scam_type && d.scam_type !== "None" ? d.scam_type + " · " : ""}spoken in ${d.warn_lang}`;
@@ -473,7 +523,7 @@ $("btnDemo").onclick = async () => {
 };
 
 function reset() {
-  fresh(); lastWarning = null;
+  fresh(); lastWarning = null; $("btnReport").disabled = true;
   $("tx").innerHTML = '<div class="empty">The call transcript will stream here.</div>';
   $("reason").textContent = "Waiting for the conversation to start.";
   $("family").classList.remove("show"); $("overlay").classList.remove("show");
