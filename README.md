@@ -81,6 +81,10 @@ Risk calibration (from the system prompt): normal family or business talk scores
 - **Full-screen alert:** a flashing red screen, an alarm tone and then the spoken Bulbul warning, with a replay button.
 - **Family alert:** an SMS draft for the family describing the scam and what was demanded, with a copy button.
 - **Detect → Warn → Act:** the alert screen has a one-tap **📞 Call 1930** button (India's National Cyber Crime Helpline) and an **📄 Evidence report** download. The report includes the caller, call duration, verdict and peak risk, scam pattern, each red flag with the scammer's exact words, a timestamped transcript with per-line risk, the warning Kavach issued, and next steps (1930, cybercrime.gov.in, Sanchar Saathi / Chakshu). It is ready to attach to a cybercrime complaint.
+- **English subtitles:** every Hindi/Tamil line is shown with its English translation, produced in the same Sarvam-105B call at no extra cost, so non-speakers can follow the call.
+- **Kavach talks back to the scammer:** right after warning the elder, a second Bulbul voice (`kabir`) tells the caller, in the caller's own language, that the call is recorded by Kavach and reported to the 1930 cyber helpline.
+- **Check a voice note:** upload a WhatsApp voice note or any recording (ogg, opus, mp3, m4a, wav). The browser decodes it, splits it into 20-second 16 kHz WAV pieces and runs it through the same pipeline.
+- **After-call lesson for the elder:** `/api/lesson` has Sarvam-105B explain, in 3–4 warm sentences in the elder's language, which tricks were used and in what order, and the one rule to remember. Bulbul speaks it aloud.
 - **Per-step latency:** each transcript line shows the STT, LLM and TTS time in ms.
 - **Three built-in demo scenarios,** voiced by Bulbul and run through the **same** STT → LLM pipeline:
   - Hindi digital arrest (fake Mumbai cyber-crime inspector → drugs parcel → "don't tell family" → video-call arrest → RBI safe account + OTP)
@@ -123,6 +127,7 @@ Not committed: `.env` (the API key), `static/demo_cache/` (Bulbul demo audio, re
 |---|---|---|
 | `GET` | `/` | Dashboard |
 | `POST` | `/api/listen` | Form fields: `file` (audio chunk), `history` (transcript so far), `warned`, `warn_lang` (`auto` or e.g. `ta-IN`). Returns the transcript, language, risk, flags, evidence, scam type, reason, warning, family alert, `warning_audio` (base64 WAV, only the first time risk ≥ 70) and timings. |
+| `POST` | `/api/lesson` | Form fields: `history`, `flags`, `lang`. Returns the lesson text plus Bulbul audio explaining the scam to the elder. |
 | `GET` | `/api/demos` | The demo scenarios and their scripts |
 | `GET` | `/api/demo/{name}/{i}` | Line `i` of a scenario voiced by Bulbul (cached as WAV) |
 
@@ -157,6 +162,7 @@ Optional settings in `.env`: `STT_MODEL`, `LLM_MODEL`, `TTS_MODEL`, `WARN_SPEAKE
 5. **v2 product:** a redesigned dashboard (phone panel, gauge, stage ladder, sparkline, evidence-backed flags, family alert, latency), a warning-language picker, three demo scenarios including a safe control call, silence skipping, and muting the mic during the warning.
 6. **Hardening:** venue Wi-Fi caused `getaddrinfo failed` errors, so we added a shared HTTP client with automatic retries. Connection reuse also cut per-chunk latency from about 8 s to about 1 s.
 7. **Iteration 2, from detection to action:** a one-tap 1930 cyber-helpline call and a downloadable evidence report (timestamped transcript plus the scammer's exact quotes per red flag), so the elder or family can file at cybercrime.gov.in straight away.
+8. **Iteration 3, protect, push back, teach:** English subtitles for judges and non-speakers, a voice that talks back to the scammer in their own language, scanning of uploaded voice notes, and a spoken after-call lesson for the elder. Tested live on the Tamil scenario: risk 25, then 95 on line 2, with the Tamil warning, the talk-back audio and a Tamil lesson all generated.
 
 ---
 
