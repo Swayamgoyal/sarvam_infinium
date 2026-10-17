@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kavach · Scam Call Shield</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Tamil:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070b14; --panel: #0f1623; --panel2: #0b111c; --line: #1d2940; --text: #e6edf8; --muted: #7d8ca8; --dim: #4b5873;
+    --safe: #22c55e; --warn: #f59e0b; --danger: #ef4444; --accent: #6366f1; --accent2: #22d3ee;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body { font: 14px/1.5 Inter, "Noto Sans Devanagari", "Noto Sans Tamil", system-ui, sans-serif;
+         background: radial-gradient(1200px 600px at 10% -10%, rgba(99,102,241,.14), transparent 60%),
+                     radial-gradient(900px 500px at 110% 10%, rgba(34,211,238,.08), transparent 60%), var(--bg); min-height: 100vh; }
+  header { display: flex; align-items: center; gap: 14px; padding: 16px 28px; border-bottom: 1px solid var(--line);
+           backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 5; background: rgba(7,11,20,.7); }
+  .logo { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+          background: linear-gradient(135deg, var(--accent), var(--accent2)); box-shadow: 0 6px 24px rgba(99,102,241,.35); }
+  .logo svg { width: 24px; height: 24px; }
+  .brand h1 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
+  .brand p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .pills { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .pill { border: 1px solid var(--line); background: var(--panel2); color: var(--muted); padding: 5px 10px; border-radius: 999px; font-size: 11.5px; }
+  .pill b { color: var(--text); font-weight: 600; }
+
+  main { display: grid; grid-template-columns: 330px 1fr 1fr; gap: 18px; padding: 20px 28px 28px; max-width: 1440px; margin: 0 auto; }
+  @media (max-width: 1150px) { main { grid-template-columns: 330px 1fr; } .flags-card { grid-column: span 2; } }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; padding: 16px; } .flags-card, .tx-card { grid-column: auto !important; } header { flex-wrap: wrap; padding: 14px 16px; } .pills { margin-left: 0; justify-content: flex-start; } }
+  .card { background: linear-gradient(180deg, var(--panel), var(--panel2)); border: 1px solid var(--line); border-radius: 18px; padding: 18px; min-width: 0; }
+  .card h2 { margin: 0 0 14px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card h2 .sp { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--dim); }
+
+  /* phone */
+  .phone { text-align: center; padding: 6px 0 14px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  .avatar { width: 74px; height: 74px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 30px;
+            background: #1a2335; border: 2px solid var(--line); transition: all .4s; }
+  .phone.ringing .avatar { animation: ring 1.4s infinite; }
+  .phone.danger .avatar { border-color: var(--danger); background: rgba(239,68,68,.15); box-shadow: 0 0 0 6px rgba(239,68,68,.12); }
+  @keyframes ring { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,.5); } 70% { box-shadow: 0 0 0 16px rgba(99,102,241,0); } }
+  .caller { font-weight: 700; font-size: 16px; }
+  .callmeta { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .wave { display: flex; gap: 3px; align-items: center; justify-content: center; height: 34px; margin-top: 12px; }
+  .wave i { width: 4px; height: 4px; border-radius: 2px; background: var(--dim); transition: height .08s, background .3s; }
+  .wave.anim i { background: var(--accent2); animation: bar .9s ease-in-out infinite; }
+  @keyframes bar { 0%,100% { height: 4px; } 50% { height: 28px; } }
+
+  label.f { display: block; font-size: 11.5px; color: var(--muted); margin: 10px 0 5px; }
+  select { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: inherit; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  button { border: 0; border-radius: 11px; padding: 11px 12px; font: 600 14px Inter, system-ui; cursor: pointer; color: #fff; transition: transform .1s, filter .2s; }
+  button:hover { filter: brightness(1.12); } button:active { transform: scale(.98); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .b-demo { background: linear-gradient(135deg, #6366f1, #8b5cf6); grid-column: span 2; }
+  .b-mic { background: #1f2a40; border: 1px solid #2c3a57; }
+  .b-mic.on { background: #b91c1c; border-color: #ef4444; }
+  .b-reset { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+  .hint { color: var(--dim); font-size: 11.5px; margin-top: 10px; min-height: 16px; }
+  .err { color: #fca5a5; }
+
+  /* risk */
+  .risk-top { display: flex; gap: 20px; align-items: center; }
+  .gauge { --p: 0; --c: var(--safe); flex: none; width: 168px; height: 168px; border-radius: 50%; display: grid; place-items: center; position: relative;
+           background: conic-gradient(var(--c) calc(var(--p) * 1%), #182235 0); transition: --p .6s; }
+  .gauge::after { content: ""; position: absolute; inset: 13px; border-radius: 50%; background: var(--panel); }
+  .gauge .v { position: relative; z-index: 1; text-align: center; }
+  .gauge .num { font-size: 50px; font-weight: 900; line-height: 1; letter-spacing: -.03em; transition: color .4s; }
+  .gauge .lbl { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  @property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
+  .verdict { font-size: 22px; font-weight: 800; letter-spacing: -.01em; transition: color .4s; }
+  .scamtype { display: inline-block; margin-top: 6px; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: rgba(239,68,68,.12); color: #fecaca; border: 1px solid rgba(239,68,68,.35); }
+  .reason { color: var(--muted); margin-top: 8px; font-size: 13px; }
+  .spark { margin-top: 16px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 6px; }
+  .spark .t { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+  .spark svg { width: 100%; height: 64px; display: block; }
+  .ladder { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 14px; }
+  .step { border: 1px solid var(--line); border-radius: 10px; padding: 8px 6px; text-align: center; background: var(--panel2); transition: all .4s; }
+  .step .n { font-size: 10px; color: var(--dim); }
+  .step .s { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .step.on { border-color: rgba(239,68,68,.6); background: rgba(239,68,68,.12); }
+  .step.on .s { color: #fecaca; } .step.on .n { color: #fca5a5; }
+
+  /* flags */
+  .flag { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: start; padding: 9px 10px; border-radius: 12px; border: 1px solid transparent; transition: all .4s; }
+  .flag + .flag { margin-top: 4px; }
+  .flag .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: #172033; font-size: 15px; filter: grayscale(1); opacity: .6; transition: all .4s; }
+  .flag .nm { font-weight: 600; color: var(--muted); font-size: 13px; transition: color .4s; }
+  .flag .q { font-size: 12.5px; color: #fca5a5; margin-top: 2px; display: none; }
+  .flag .st { font-size: 11px; color: var(--dim); padding-top: 6px; }
+  .flag.hit { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.35); }
+  .flag.hit .ic { filter: none; opacity: 1; background: rgba(239,68,68,.18); }
+  .flag.hit .nm { color: var(--text); } .flag.hit .q { display: block; } .flag.hit .st { color: var(--danger); font-weight: 700; }
+  .family { margin-top: 14px; border: 1px solid rgba(34,197,94,.35); background: rgba(34,197,94,.07); border-radius: 12px; padding: 12px; display: none; }
+  .family.show { display: block; animation: rise .5s; }
+  .family .h { font-size: 12px; font-weight: 700; color: #86efac; display: flex; align-items: center; gap: 8px; }
+  .family .h button { margin-left: auto; padding: 4px 10px; font-size: 11.5px; background: #14532d; }
+  .family p { margin: 6px 0 0; font-size: 13px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+  /* transcript */
+  .tx-card { grid-column: 1 / -1; }
+  #tx { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .msg { display: grid; grid-template-columns: 4px 1fr; gap: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 10px 0; animation: rise .35s; }
+  .msg .bar { border-radius: 0 4px 4px 0; }
+  .msg .meta { display: flex; gap: 12px; font-size: 11px; color: var(--dim); margin-bottom: 2px; flex-wrap: wrap; }
+  .msg .meta .r { font-weight: 700; }
+  .msg .txt { font-size: 15px; }
+  .empty { color: var(--dim); text-align: center; padding: 24px; }
+
+  /* alert */
+  #overlay { position: fixed; inset: 0; z-index: 20; display: none; place-items: center; padding: 16px;
+             background: radial-gradient(circle at center, rgba(153,27,27,.92), rgba(40,0,0,.96)); }
+  #overlay.show { display: grid; animation: flash .7s 3; }
+  @keyframes flash { 50% { background: rgba(220,38,38,.97); } }
+  .abox { max-width: 760px; text-align: center; }
+  .abox .shield { font-size: 64px; }
+  .abox .big { font-size: clamp(30px, 5vw, 50px); font-weight: 900; letter-spacing: -.01em; }
+  .abox .warn { font-size: clamp(19px, 2.6vw, 27px); margin: 18px 0 8px; line-height: 1.55; font-weight: 600; }
+  .abox .meta { opacity: .8; font-size: 14px; }
+  .abox .acts { display: flex; gap: 10px; justify-content: center; margin-top: 22px; flex-wrap: wrap; }
+  .abox .acts button { background: #fff; color: #991b1b; padding: 12px 22px; }
+  .abox .acts button.g { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+  <div class="brand"><h1>Kavach <span style="color:var(--muted);font-weight:500">कवच</span></h1><p>Real-time shield against digital-arrest &amp; KYC scam calls, in the elder's own language</p></div>
+  <div class="pills">
+    <span class="pill">STT <b>Saaras v4</b></span>
+    <span class="pill">Reasoning <b>Sarvam-105B</b></span>
+    <span class="pill">Voice <b>Bulbul v3</b></span>
+  </div>
+</header>
+
+<main>
+  <!-- call panel -->
+  <section class="card">
+    <h2>Incoming call</h2>
+    <div class="phone" id="phone">
+      <div class="avatar" id="avatar">📞</div>
+      <div class="caller" id="caller">No active call</div>
+      <div class="callmeta" id="callmeta">Kavach is standing by</div>
+      <div class="wave" id="wave"></div>
+    </div>
+    <label class="f" for="scenario">Demo scenario</label>
+    <select id="scenario"></select>
+    <label class="f" for="wlang">Warn the elder in</label>
+    <select id="wlang">
+      <option value="auto">Same language as the call (auto)</option>
+      <option value="hi-IN">हिन्दी Hindi</option><option value="ta-IN">தமிழ் Tamil</option>
+      <option value="te-IN">తెలుగు Telugu</option><option value="kn-IN">ಕನ್ನಡ Kannada</option>
+      <option value="ml-IN">മലയാളം Malayalam</option><option value="bn-IN">বাংলা Bengali</option>
+      <option value="mr-IN">मराठी Marathi</option><option value="gu-IN">ગુજરાતી Gujarati</option>
+      <option value="pa-IN">ਪੰਜਾਬੀ Punjabi</option><option value="od-IN">ଓଡ଼ିଆ Odia</option>
+      <option value="en-IN">English</option>
+    </select>
+    <div class="btns">
+      <button class="b-demo" id="btnDemo">▶ Play demo call</button>
+      <button class="b-mic" id="btnMic">🎙️ Live mic</button>
+      <button class="b-reset" id="btnReset">↺ Reset</button>
+    </div>
+    <div class="hint" id="hint">Live mic: put the real call on speaker near the laptop.</div>
+  </section>
+
+  <!-- risk panel -->
+  <section class="card">
+    <h2>Scam risk <span class="sp" id="lat"></span></h2>
+    <div class="risk-top">
+      <div class="gauge" id="gauge"><div class="v"><div class="num" id="riskNum">0</div><div class="lbl">risk score</div></div></div>
+      <div>
+        <div class="verdict" id="verdict" style="color:var(--safe)">Call looks safe</div>
+        <div id="stype"></div>
+        <div class="reason" id="reason">Waiting for the conversation to start.</div>
+      </div>
+    </div>
+    <div class="ladder" id="ladder"></div>
+    <div class="spark">
+      <div class="t"><span>Risk over the call</span><span>alert at 70</span></div>
+      <svg viewBox="0 0 300 64" preserveAspectRatio="none" id="spark"></svg>
+    </div>
+  </section>
+
+  <!-- flags panel -->
+  <section class="card flags-card">
+    <h2>Red flags · with evidence</h2>
+    <div id="flags"></div>
+    <div class="family" id="family">
+      <div class="h">📲 Family alert · SMS draft <button id="btnCopy">Copy</button></div>
+      <p id="familyTxt"></p>
+    </div>
+  </section>
+
+  <!-- transcript -->
+  <section class="card tx-card">
+    <h2>Live transcript <span class="sp">auto language detection · code-mixed</span></h2>
+    <div id="tx"><div class="empty">The call transcript will stream here.</div></div>
+  </section>
+</main>
+
+<div id="overlay">
+  <div class="abox">
+    <div class="shield">🛡️</div>
+    <div class="big">SCAM CALL — HANG UP NOW</div>
+    <div class="warn" id="warnTxt"></div>
+    <div class="meta" id="warnMeta"></div>
+    <div class="acts">
+      <button id="btnReplay">🔊 Replay warning</button>
+      <button class="g" id="btnClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FLAGS = {
+  fake_authority:    ["👮", "Impersonating police / CBI / bank"],
+  urgency_threat:    ["⛓️", "Arrest / FIR / account-block threat"],
+  secrecy:           ["🤫", "Asks to hide it from family"],
+  video_call_arrest: ["📹", "'Digital arrest' on video call"],
+  money_transfer:    ["💸", "Demands money transfer"],
+  otp_kyc:           ["🔑", "Asks for OTP / KYC / Aadhaar"],
+  remote_app:        ["📲", "Asks to install remote-access app"],
+};
+const STAGES = [
+  ["Hook", s => s.risk >= 20],
+  ["Authority", s => s.seen.has("fake_authority")],
+  ["Fear", s => s.seen.has("urgency_threat")],
+  ["Isolation", s => s.seen.has("secrecy") || s.seen.has("video_call_arrest")],
+  ["Extraction", s => s.seen.has("money_transfer") || s.seen.has("otp_kyc") || s.seen.has("remote_app")],
+];
+const CHUNK_SEC = 5, SILENCE_RMS = 0.012, THRESH = 70;
+const $ = id => document.getElementById(id);
+
+let S, demos = {}, queue = Promise.resolve(), lastWarning = null, timerId = null;
+let mic = null;   // {stream, ctx, proc}
+let muted = false;
+
+function fresh() {
+  S = { history: [], risk: 0, series: [], seen: new Set(), evidence: {}, warned: false, start: 0, active: false };
+}
+
+/* ---------- rendering ---------- */
+function color(r) { return r >= THRESH ? "var(--danger)" : r >= 40 ? "var(--warn)" : "var(--safe)"; }
+
+function renderFlags() {
+  $("flags").innerHTML = Object.entries(FLAGS).map(([k, [ic, nm]]) => {
+    const hit = S.seen.has(k), q = S.evidence[k];
+    return `<div class="flag ${hit ? "hit" : ""}"><div class="ic">${ic}</div>
+      <div><div class="nm">${nm}</div><div class="q">${q ? "“" + esc(q) + "”" : ""}</div></div>
+      <div class="st">${hit ? "DETECTED" : "—"}</div></div>`;
+  }).join("");
+}
+
+function renderRisk(reason, scamType) {
+  const c = color(S.risk);
+  $("gauge").style.setProperty("--p", S.risk);
+  $("gauge").style.setProperty("--c", c);
+  $("riskNum").textContent = S.risk; $("riskNum").style.color = c;
+  $("verdict").style.color = c;
+  $("verdict").textContent = S.risk >= THRESH ? "🚨 Scam detected" : S.risk >= 40 ? "⚠️ Suspicious call" : "Call looks safe";
+  if (reason) $("reason").textContent = reason;
+  $("stype").innerHTML = scamType && scamType !== "None" && S.risk >= 40 ? `<span class="scamtype">${esc(scamType)}</span>` : "";
+  $("ladder").innerHTML = STAGES.map(([n, f], i) => `<div class="step ${f(S) ? "on" : ""}"><div class="n">0${i + 1}</div><div class="s">${n}</div></div>`).join("");
+  $("phone").classList.toggle("danger", S.risk >= THRESH);
+  $("avatar").textContent = S.risk >= THRESH ? "⚠️" : "📞";
+  renderSpark();
+}
+
+function renderSpark() {
+  const pts = [0, ...S.series], n = Math.max(pts.length - 1, 1);
+  const xy = pts.map((r, i) => [(i / n) * 300, 60 - (r / 100) * 56]);
+  const line = xy.map(p => p.join(",")).join(" ");
+  const c = color(S.risk).replace("var(", "").replace(")", "");
+  $("spark").innerHTML = `
+    <line x1="0" x2="300" y1="${60 - THRESH * .56}" y2="${60 - THRESH * .56}" stroke="#ef4444" stroke-opacity=".45" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+    <polygon points="0,60 ${line} 300,60" fill="var(${c})" fill-opacity=".14"/>
+    <polyline points="${line}" fill="none" stroke="var(${c})" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+}
+
+function addMsg(d) {
+  if ($("tx").querySelector(".empty")) $("tx").innerHTML = "";
+  const t = d.timings || {};
+  const el = document.createElement("div");
+  el.className = "msg";
+  el.innerHTML = `<div class="bar" style="background:${color(d.risk)}"></div><div>
+    <div class="meta"><span>${clock()}</span><span>${d.language_code || ""}</span>
+    <span class="r" style="color:${color(d.risk)}">risk ${d.risk}</span>
+    <span>STT ${t.stt ?? "–"} ms · LLM ${t.llm ?? "–"} ms${t.tts ? " · TTS " + t.tts + " ms" : ""}</span></div>
+    <div class="txt"></div></div>`;
+  el.querySelector(".txt").textContent = d.transcript;
+  $("tx").appendChild(el);
+  $("tx").scrollTop = 1e9;
+  $("lat").textContent = t.stt ? `last check ${((t.stt + t.llm) / 1000).toFixed(1)} s` : "";
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function clock() { const s = S.start ? Math.floor((Date.now() - S.start) / 1000) : 0; return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }
+
+function startCall(name, meta) {
+  S.active = true; S.start = Date.now();
+  $("caller").textContent = name;
+  $("phone").classList.add("ringing");
+  clearInterval(timerId);
+  timerId = setInterval(() => $("callmeta").textContent = `${meta} · ${clock()}`, 500);
+}
+function endCall() {
+  S.active = false; clearInterval(timerId);
+  $("phone").classList.remove("ringing");
+  $("callmeta").textContent = S.history.length ? `Call ended · ${clock()}` : "Kavach is standing by";
+  $("wave").classList.remove("anim"); setWave(0);
+}
+
+const WAVE_N = 28;
+$("wave").innerHTML = "<i></i>".repeat(WAVE_N);
+[...$("wave").children].forEach((b, i) => b.style.animationDelay = `${(i % 7) * 0.09}s`);
+function setWave(level) {
+  [...$("wave").children].forEach((b, i) => {
+    const h = 4 + Math.min(1, level * 9) * 28 * (0.4 + 0.6 * Math.abs(Math.sin(i * 1.7 + Date.now() / 120)));
+    b.style.height = h + "px"; b.style.background = level > SILENCE_RMS ? "var(--accent2)" : "var(--dim)";
+  });
+}
+
+/* ---------- alerts ---------- */
+function alarm() {
+  try {
+    const ctx = new AudioContext();
+    [0, .3, .6, .9].forEach(t => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "square"; o.frequency.value = t % .6 ? 660 : 990; g.gain.value = .12;
+      o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .22);
+    });
+  } catch (e) {}
+}
+function playB64(b64) {
+  return new Promise(res => {
+    muted = true;
+    const a = new Audio("data:audio/wav;base64," + b64);
+    const done = () => { muted = false; res(); };
+    a.onended = done; a.onerror = done; a.play().catch(done);
+  });
+}
+
+/* ---------- pipeline ---------- */
+async function handle(d) {
+  if (!d || d.skipped || !d.transcript) return;
+  S.history.push(d.transcript);
+  S.series.push(d.risk);
+  S.risk = Math.max(S.risk, d.risk);
+  (d.flags || []).forEach(f => S.seen.add(f));
+  (d.evidence || []).forEach(e => { if (e.quote && !S.evidence[e.flag]) S.evidence[e.flag] = e.quote; });
+  addMsg(d);
+  renderFlags();
+  renderRisk(d.reason, d.scam_type);
+  if (d.family_alert && !$("family").classList.contains("show")) {
+    $("familyTxt").textContent = d.family_alert;
+    $("family").classList.add("show");
+  }
+  if (d.warning_audio && !S.warned) {
+    S.warned = true;
+    lastWarning = d.warning_audio;
+    $("warnTxt").textContent = d.warning;
+    $("warnMeta").textContent = `${d.scam_type && d.scam_type !== "None" ? d.scam_type + " · " : ""}spoken in ${d.warn_lang}`;
+    $("overlay").classList.add("show");
+    alarm();
+    await new Promise(r => setTimeout(r, 1300));
+    await playB64(d.warning_audio);
+  }
+}
+
+function send(blob, name) {
+  const fd = new FormData();
+  fd.append("file", blob, name);
+  fd.append("history", S.history.join("\n"));
+  fd.append("warned", String(S.warned));
+  fd.append("warn_lang", $("wlang").value);
+  const p = fetch("/api/listen", { method: "POST", body: fd })
+    .then(async r => { if (!r.ok) throw new Error((await r.text()).slice(0, 220)); return r.json(); })
+    .catch(e => { hint(String(e.message || e), true); return null; });
+  queue = queue.then(() => p).then(handle);   // keep transcript order
+  return p;
+}
+
+function hint(t, err) { $("hint").textContent = t; $("hint").classList.toggle("err", !!err); }
+
+/* ---------- live mic → 16 kHz WAV chunks ---------- */
+function toWav(f32, inRate, outRate = 16000) {
+  const ratio = inRate / outRate, n = Math.floor(f32.length / ratio), pcm = new Int16Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = Math.floor(i * ratio), b = Math.min(f32.length, Math.floor((i + 1) * ratio));
+    let s = 0; for (let j = a; j < b; j++) s += f32[j];
+    const v = Math.max(-1, Math.min(1, s / Math.max(1, b - a)));
+    pcm[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
+  }
+  const buf = new ArrayBuffer(44 + pcm.length * 2), v = new DataView(buf);
+  const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); v.setUint32(4, 36 + pcm.length * 2, true); w(8, "WAVE"); w(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, outRate, true); v.setUint32(28, outRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, pcm.length * 2, true);
+  new Int16Array(buf, 44).set(pcm);
+  return new Blob([buf], { type: "audio/wav" });
+}
+
+async function startMic() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
+  const ctx = new AudioContext();
+  const src = ctx.createMediaStreamSource(stream);
+  const proc = ctx.createScriptProcessor(4096, 1, 1);
+  let parts = [], len = 0, energy = 0;
+  proc.onaudioprocess = e => {
+    const d = e.inputBuffer.getChannelData(0);
+    let sq = 0; for (let i = 0; i < d.length; i++) sq += d[i] * d[i];
+    const rms = Math.sqrt(sq / d.length);
+    setWave(rms);
+    if (muted) { parts = []; len = 0; energy = 0; return; }   // don't transcribe our own warning
+    parts.push(new Float32Array(d)); len += d.length; energy += sq;
+    if (len >= ctx.sampleRate * CHUNK_SEC) {
+      const all = new Float32Array(len); let o = 0;
+      parts.forEach(p => { all.set(p, o); o += p.length; });
+      const chunkRms = Math.sqrt(energy / len);
+      parts = []; len = 0; energy = 0;
+      if (chunkRms < SILENCE_RMS) { hint("Listening… (silence skipped, no credits used)"); return; }
+      hint("Listening… analysing last 5 s");
+      send(toWav(all, ctx.sampleRate), "chunk.wav");
+    }
+  };
+  src.connect(proc); proc.connect(ctx.destination);
+  mic = { stream, ctx, proc };
+}
+function stopMic() {
+  if (!mic) return;
+  mic.proc.disconnect(); mic.stream.getTracks().forEach(t => t.stop()); mic.ctx.close(); mic = null;
+}
+
+$("btnMic").onclick = async () => {
+  if (mic) {
+    stopMic(); endCall();
+    $("btnMic").textContent = "🎙️ Live mic"; $("btnMic").classList.remove("on"); $("btnDemo").disabled = false;
+    hint("Mic stopped.");
+    return;
+  }
+  try { await startMic(); } catch (e) { hint("Microphone permission denied.", true); return; }
+  if (!S.history.length) startCall("Live call on speaker", "Kavach listening");
+  $("btnMic").textContent = "⏹ Stop mic"; $("btnMic").classList.add("on"); $("btnDemo").disabled = true;
+  hint("Listening… speak or play the call near the mic.");
+};
+
+/* ---------- demo scenarios (Bulbul-voiced, same STT→LLM pipeline) ---------- */
+$("btnDemo").onclick = async () => {
+  const key = $("scenario").value, d = demos[key];
+  reset();
+  $("btnDemo").disabled = true; $("btnMic").disabled = true;
+  startCall(d.caller, "On speaker · Kavach listening");
+  $("wave").classList.add("anim");
+  try {
+    for (let i = 0; i < d.lines.length; i++) {
+      hint(`Caller speaking · line ${i + 1}/${d.lines.length}`);
+      const blob = await (await fetch(`/api/demo/${key}/${i}`)).blob();
+      const a = new Audio(URL.createObjectURL(blob));
+      const played = new Promise(r => { a.onended = r; a.onerror = r; });
+      send(blob, `${key}_${i}.wav`);        // analyse while the line plays
+      await a.play(); await played;
+      await queue;
+      if (S.warned) break;
+    }
+    hint(S.warned ? "Scam stopped before money or OTP was shared." : "Call finished. No scam detected ✅");
+  } catch (e) { hint(String(e).slice(0, 200), true); }
+  endCall();
+  $("btnDemo").disabled = false; $("btnMic").disabled = false;
+};
+
+function reset() {
+  fresh(); lastWarning = null;
+  $("tx").innerHTML = '<div class="empty">The call transcript will stream here.</div>';
+  $("reason").textContent = "Waiting for the conversation to start.";
+  $("family").classList.remove("show"); $("overlay").classList.remove("show");
+  $("caller").textContent = "No active call"; $("lat").textContent = "";
+  endCall(); renderFlags(); renderRisk();
+}
+$("btnReset").onclick = () => { if (mic) $("btnMic").click(); reset(); hint("Ready."); };
+$("btnReplay").onclick = () => lastWarning && playB64(lastWarning);
+$("btnClose").onclick = () => $("overlay").classList.remove("show");
+$("btnCopy").onclick = () => navigator.clipboard?.writeText($("familyTxt").textContent).then(() => $("btnCopy").textContent = "Copied ✓");
+
+fetch("/api/demos").then(r => r.json()).then(j => {
+  demos = j;
+  $("scenario").innerHTML = Object.entries(j).map(([k, v]) => `<option value="${k}">${v.title}</option>`).join("");
+});
+fresh(); reset(); hint("Live mic: put the real call on speaker near the laptop.");
+</script>
+</body>
+</html>
