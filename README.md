@@ -111,15 +111,22 @@ Typical latency per 5-second chunk once connections are warm: STT about 0.6–1.
 
 ```
 sarvam_infinium/
-├── app.py               # FastAPI backend: Sarvam STT → LLM → TTS pipeline, demo scenarios
-├── static/
-│   └── index.html       # Single-page dashboard (vanilla HTML/CSS/JS, no build step)
+├── backend/                 # FastAPI server (Python)
+│   ├── main.py              # API routes: /api/listen, /api/lesson, /api/demos, /api/demo/{name}/{i}
+│   ├── sarvam.py            # Async client for Saaras (STT), Sarvam-105B (chat), Bulbul (TTS), with retries
+│   ├── prompts.py           # Scam-detection system prompt, red-flag keys, talk-back phrases, lesson prompt
+│   ├── demos.py             # Demo call scripts (Hindi arrest, Tamil KYC, safe call)
+│   └── config.py            # Env vars, model names, languages, paths
+├── frontend/                # Static dashboard (vanilla HTML/CSS/JS, no build step)
+│   ├── index.html           # Layout
+│   ├── css/styles.css       # Theme and components
+│   └── js/app.js            # Mic → 16 kHz WAV capture, pipeline calls, rendering, alerts, report, lesson
 ├── requirements.txt
-├── .env.example         # Copy to .env and add your key
-└── .gitignore           # .env, old_files/, demo audio cache, *.exe
+├── .env.example             # Copy to .env and add your key
+└── .gitignore
 ```
 
-Not committed: `.env` (the API key), `static/demo_cache/` (Bulbul demo audio, regenerated on first use) and `old_files/` (a local archive folder).
+Not committed: `.env` (the API key), `backend/.cache/` (Bulbul demo audio, regenerated on first use) and `old_files/` (a local archive folder).
 
 ### API endpoints
 
@@ -140,7 +147,7 @@ Requires Python 3.10 or later.
 ```bash
 pip install -r requirements.txt
 cp .env.example .env          # then put your Sarvam key in .env
-python -m uvicorn app:app --port 8000
+python -m uvicorn backend.main:app --port 8000
 ```
 
 Open http://127.0.0.1:8000 and then:
@@ -163,6 +170,7 @@ Optional settings in `.env`: `STT_MODEL`, `LLM_MODEL`, `TTS_MODEL`, `WARN_SPEAKE
 6. **Hardening:** venue Wi-Fi caused `getaddrinfo failed` errors, so we added a shared HTTP client with automatic retries. Connection reuse also cut per-chunk latency from about 8 s to about 1 s.
 7. **Iteration 2, from detection to action:** a one-tap 1930 cyber-helpline call and a downloadable evidence report (timestamped transcript plus the scammer's exact quotes per red flag), so the elder or family can file at cybercrime.gov.in straight away.
 8. **Iteration 3, protect, push back, teach:** English subtitles for judges and non-speakers, a voice that talks back to the scammer in their own language, scanning of uploaded voice notes, and a spoken after-call lesson for the elder. Tested live on the Tamil scenario: risk 25, then 95 on line 2, with the Tamil warning, the talk-back audio and a Tamil lesson all generated.
+9. **Restructure:** split into `backend/` (routes, Sarvam client, prompts, demos, config) and `frontend/` (HTML, CSS, JS), so each part is easy to find and review.
 
 ---
 
