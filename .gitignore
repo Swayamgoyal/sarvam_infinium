@@ -1,0 +1,5 @@
+.env
+old_files/
+__pycache__/
+static/demo_cache/
+*.exe
