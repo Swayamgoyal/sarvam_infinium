@@ -80,6 +80,7 @@ Risk calibration (from the system prompt): normal family or business talk scores
 - **Warning in the elder's language:** auto mode uses the caller's language, or you can pick any of 11 languages (Hindi, Tamil, Telugu, Kannada, Malayalam, Bengali, Marathi, Gujarati, Punjabi, Odia, English). A Hindi-speaking scammer can be countered with a Tamil warning.
 - **Full-screen alert:** a flashing red screen, an alarm tone and then the spoken Bulbul warning, with a replay button.
 - **Family alert:** an SMS draft for the family describing the scam and what was demanded, with a copy button.
+- **Detect → Warn → Act:** the alert screen has a one-tap **📞 Call 1930** button (India's National Cyber Crime Helpline) and an **📄 Evidence report** download. The report includes the caller, call duration, verdict and peak risk, scam pattern, each red flag with the scammer's exact words, a timestamped transcript with per-line risk, the warning Kavach issued, and next steps (1930, cybercrime.gov.in, Sanchar Saathi / Chakshu). It is ready to attach to a cybercrime complaint.
 - **Per-step latency:** each transcript line shows the STT, LLM and TTS time in ms.
 - **Three built-in demo scenarios,** voiced by Bulbul and run through the **same** STT → LLM pipeline:
   - Hindi digital arrest (fake Mumbai cyber-crime inspector → drugs parcel → "don't tell family" → video-call arrest → RBI safe account + OTP)
@@ -155,6 +156,7 @@ Optional settings in `.env`: `STT_MODEL`, `LLM_MODEL`, `TTS_MODEL`, `WARN_SPEAKE
 4. **Bug fix:** Chrome's `MediaRecorder` produces `audio/webm;codecs=opus`, which Saaras rejects. We replaced it with raw PCM capture in the browser (ScriptProcessor), downsampled to 16 kHz mono 16-bit WAV, which is also the format STT handles best.
 5. **v2 product:** a redesigned dashboard (phone panel, gauge, stage ladder, sparkline, evidence-backed flags, family alert, latency), a warning-language picker, three demo scenarios including a safe control call, silence skipping, and muting the mic during the warning.
 6. **Hardening:** venue Wi-Fi caused `getaddrinfo failed` errors, so we added a shared HTTP client with automatic retries. Connection reuse also cut per-chunk latency from about 8 s to about 1 s.
+7. **Iteration 2, from detection to action:** a one-tap 1930 cyber-helpline call and a downloadable evidence report (timestamped transcript plus the scammer's exact quotes per red flag), so the elder or family can file at cybercrime.gov.in straight away.
 
 ---
 
