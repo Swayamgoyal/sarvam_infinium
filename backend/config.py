@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
-DEMO_CACHE = ROOT / "backend" / ".cache" / "demo_audio"
+# Vercel's filesystem is read-only except /tmp
+DEMO_CACHE = Path("/tmp/kavach_demo_audio") if os.getenv("VERCEL") else ROOT / "backend" / ".cache" / "demo_audio"
 DEMO_CACHE.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(ROOT / ".env")

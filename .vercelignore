@@ -1,0 +1,5 @@
+.env
+old_files/
+backend/.cache/
+*.exe
+*.pdf
