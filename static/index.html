@@ -109,6 +109,12 @@
   .msg .meta { display: flex; gap: 12px; font-size: 11px; color: var(--dim); margin-bottom: 2px; flex-wrap: wrap; }
   .msg .meta .r { font-weight: 700; }
   .msg .txt { font-size: 15px; }
+  .msg .en { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 2px; }
+  .b-tool { background: #1f2a40; border: 1px solid #2c3a57; }
+  .lesson { margin-top: 14px; border: 1px solid rgba(99,102,241,.4); background: rgba(99,102,241,.08); border-radius: 12px; padding: 12px; display: none; }
+  .lesson.show { display: block; animation: rise .5s; }
+  .lesson .h { font-size: 12px; font-weight: 700; color: #c7d2fe; }
+  .lesson p { margin: 6px 0 0; font-size: 14px; }
   .empty { color: var(--dim); text-align: center; padding: 24px; }
 
   /* alert */
@@ -163,7 +169,10 @@
       <button class="b-demo" id="btnDemo">▶ Play demo call</button>
       <button class="b-mic" id="btnMic">🎙️ Live mic</button>
       <button class="b-reset" id="btnReset">↺ Reset</button>
+      <button class="b-tool" id="btnUpload">📁 Check a voice note</button>
+      <button class="b-tool" id="btnLesson" disabled>🎓 Explain to elder</button>
       <button class="b-report" id="btnReport" onclick="downloadReport()" disabled>📄 Evidence report for cybercrime.gov.in</button>
+      <input type="file" id="fileIn" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav" hidden>
     </div>
     <div class="hint" id="hint">Live mic: put the real call on speaker near the laptop.</div>
   </section>
@@ -193,6 +202,10 @@
     <div class="family" id="family">
       <div class="h">📲 Family alert · SMS draft <button id="btnCopy">Copy</button></div>
       <p id="familyTxt"></p>
+    </div>
+    <div class="lesson" id="lesson">
+      <div class="h">🎓 Lesson for the elder (spoken by Bulbul)</div>
+      <p id="lessonTxt"></p>
     </div>
   </section>
 
@@ -296,6 +309,11 @@ function addMsg(d) {
     <span>STT ${t.stt ?? "–"} ms · LLM ${t.llm ?? "–"} ms${t.tts ? " · TTS " + t.tts + " ms" : ""}</span></div>
     <div class="txt"></div></div>`;
   el.querySelector(".txt").textContent = d.transcript;
+  if (d.english && d.language_code !== "en-IN") {
+    const en = document.createElement("div");
+    en.className = "en"; en.textContent = "EN · " + d.english;
+    el.querySelector(".txt").after(en);
+  }
   $("tx").appendChild(el);
   $("tx").scrollTop = 1e9;
   $("lat").textContent = t.stt ? `last check ${((t.stt + t.llm) / 1000).toFixed(1)} s` : "";
@@ -417,6 +435,12 @@ async function handle(d) {
     alarm();
     await new Promise(r => setTimeout(r, 1300));
     await playB64(d.warning_audio);
+    if (d.talkback_audio) {
+      $("warnMeta").textContent = "🗣️ Kavach is now speaking to the scammer: call recorded & reported to 1930";
+      await new Promise(r => setTimeout(r, 500));
+      await playB64(d.talkback_audio);
+    }
+    $("btnLesson").disabled = false;
   }
 }
 
@@ -523,7 +547,8 @@ $("btnDemo").onclick = async () => {
 };
 
 function reset() {
-  fresh(); lastWarning = null; $("btnReport").disabled = true;
+  fresh(); lastWarning = null; $("btnReport").disabled = true; $("btnLesson").disabled = true;
+  $("lesson").classList.remove("show");
   $("tx").innerHTML = '<div class="empty">The call transcript will stream here.</div>';
   $("reason").textContent = "Waiting for the conversation to start.";
   $("family").classList.remove("show"); $("overlay").classList.remove("show");
@@ -534,6 +559,52 @@ $("btnReset").onclick = () => { if (mic) $("btnMic").click(); reset(); hint("Rea
 $("btnReplay").onclick = () => lastWarning && playB64(lastWarning);
 $("btnClose").onclick = () => $("overlay").classList.remove("show");
 $("btnCopy").onclick = () => navigator.clipboard?.writeText($("familyTxt").textContent).then(() => $("btnCopy").textContent = "Copied ✓");
+
+/* ---------- check a voice note: decode any audio → 16 kHz WAV pieces → same pipeline ---------- */
+$("btnUpload").onclick = () => $("fileIn").click();
+$("fileIn").onchange = async () => {
+  const f = $("fileIn").files[0]; $("fileIn").value = "";
+  if (!f) return;
+  reset();
+  $("btnUpload").disabled = $("btnDemo").disabled = $("btnMic").disabled = true;
+  startCall("Voice note: " + f.name.slice(0, 28), "Scanning recording");
+  $("wave").classList.add("anim");
+  try {
+    const ctx = new AudioContext();
+    const buf = await ctx.decodeAudioData(await f.arrayBuffer());
+    const data = buf.getChannelData(0), step = buf.sampleRate * 20;   // 20 s pieces
+    for (let o = 0, k = 1; o < data.length; o += step, k++) {
+      hint(`Scanning voice note · part ${k}/${Math.ceil(data.length / step)}`);
+      send(toWav(data.subarray(o, o + step), buf.sampleRate), `note_${k}.wav`);
+      await queue;
+      if (S.warned) break;
+    }
+    ctx.close();
+    hint(S.warned ? "Scam voice note detected." : "Voice note scanned. No scam detected ✅");
+  } catch (e) { hint("Could not read this audio file: " + e, true); }
+  endCall();
+  $("btnUpload").disabled = $("btnDemo").disabled = $("btnMic").disabled = false;
+};
+
+/* ---------- after-call lesson for the elder ---------- */
+$("btnLesson").onclick = async () => {
+  $("btnLesson").disabled = true; hint("Preparing a lesson for the elder…");
+  const fd = new FormData();
+  fd.append("history", S.history.join("\n"));
+  fd.append("flags", [...S.seen].map(k => FLAGS[k][1]).join(", "));
+  fd.append("lang", S.warnLang || ($("wlang").value !== "auto" ? $("wlang").value : S.lines.at(-1)?.lang) || "hi-IN");
+  try {
+    const r = await fetch("/api/lesson", { method: "POST", body: fd });
+    if (!r.ok) throw new Error((await r.text()).slice(0, 200));
+    const j = await r.json();
+    $("overlay").classList.remove("show");
+    $("lessonTxt").textContent = j.text; $("lesson").classList.add("show");
+    hint("Bulbul is explaining the scam to the elder…");
+    await playB64(j.audio);
+    hint("Lesson done.");
+  } catch (e) { hint(String(e.message || e), true); }
+  $("btnLesson").disabled = false;
+};
 
 fetch("/api/demos").then(r => r.json()).then(j => {
   demos = j;

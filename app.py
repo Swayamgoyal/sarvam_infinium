@@ -68,7 +68,21 @@ Reply ONLY with JSON:
  "scam_type": "<2-4 words English, or 'None'>",
  "reason": "<one short English sentence for the dashboard>",
  "warning": "<if risk >= {RISK_THRESHOLD}: 1-2 short sentences spoken TO the elderly listener in {{LANG}}, in that language's native script, respectful, telling them to hang up now, never share OTP or send money, real police never arrest on a video call. Else empty string>",
- "family_alert": "<if risk >= {RISK_THRESHOLD}: one English SMS sentence to the elder's family describing the scam and what the caller demanded. Else empty string>"}}"""
+ "family_alert": "<if risk >= {RISK_THRESHOLD}: one English SMS sentence to the elder's family describing the scam and what the caller demanded. Else empty string>",
+ "english": "<faithful English translation of ONLY the LATEST LINE>"}}"""
+
+# Spoken TO the scammer once a scam is detected, in the caller's own language.
+TALKBACK = {
+    "hi-IN": "सावधान! यह कॉल कवच द्वारा रिकॉर्ड की जा रही है और साइबर क्राइम हेल्पलाइन 1930 पर रिपोर्ट कर दी गई है।",
+    "ta-IN": "எச்சரிக்கை! இந்த அழைப்பு கவச் மூலம் பதிவு செய்யப்படுகிறது, சைபர் கிரைம் உதவி எண் 1930-க்கு புகார் அளிக்கப்பட்டுள்ளது.",
+    "en-IN": "Warning! This call is being recorded by Kavach and has been reported to the cyber crime helpline 1930.",
+}
+TALKBACK_SPEAKER = os.getenv("TALKBACK_SPEAKER", "kabir")
+
+LESSON_PROMPT = """You are Kavach, a caring scam-safety teacher for elderly Indians.
+Given a phone-call transcript and the red flags detected, explain to the elder in {LANG} (native script),
+in 3-4 short, simple, warm sentences: which tricks the caller used, in the order they used them,
+and the one rule to remember next time. No markdown, no lists. Reply with only the spoken text."""
 
 app = FastAPI(title="Kavach")
 
@@ -110,12 +124,12 @@ async def stt(audio: bytes, filename: str, content_type: str) -> dict:
     return r.json()
 
 
-async def analyze(conversation: str, warn_lang: str) -> dict:
+async def analyze(conversation: str, latest: str, warn_lang: str) -> dict:
     body = {
         "model": LLM_MODEL,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT.replace("{LANG}", LANG_NAMES.get(warn_lang, "Hindi"))},
-            {"role": "user", "content": f"Call transcript so far:\n{conversation[-3000:]}"},
+            {"role": "user", "content": f"Call transcript so far:\n{conversation[-3000:]}\n\nLATEST LINE:\n{latest}"},
         ],
         "temperature": 0.1,
         "max_tokens": 500,
@@ -145,6 +159,7 @@ async def analyze(conversation: str, warn_lang: str) -> dict:
         "reason": data.get("reason", ""),
         "warning": data.get("warning", ""),
         "family_alert": data.get("family_alert", ""),
+        "english": data.get("english", ""),
     }
 
 
@@ -188,19 +203,46 @@ async def listen(
         target = "hi-IN"
 
     t0 = time.perf_counter()
-    result = await analyze((history + "\n" + text).strip(), target)
+    result = await analyze((history + "\n" + text).strip(), text, target)
     timings["llm"] = _ms(t0)
 
-    audio_b64 = None
+    audio_b64 = talkback_b64 = None
     if result["risk"] >= RISK_THRESHOLD and warned != "true" and result["warning"]:
         t0 = time.perf_counter()
-        audio_b64 = await tts(result["warning"], target, WARN_SPEAKER)
+        tb_lang = lang if lang in TALKBACK else "en-IN"
+        audio_b64, talkback_b64 = await asyncio.gather(
+            tts(result["warning"], target, WARN_SPEAKER),
+            tts(TALKBACK[tb_lang], tb_lang, TALKBACK_SPEAKER),
+        )
         timings["tts"] = _ms(t0)
 
     return {
         "transcript": text, "language_code": lang, "warn_lang": target, **result,
-        "warning_audio": audio_b64, "timings": timings,
+        "warning_audio": audio_b64, "talkback_audio": talkback_b64, "timings": timings,
     }
+
+
+@app.post("/api/lesson")
+async def lesson(history: str = Form(...), flags: str = Form(""), lang: str = Form("hi-IN")):
+    """After the call: Bulbul explains to the elder, in their language, which tricks were used."""
+    _require_key()
+    lang = lang if lang in TTS_LANGS else "hi-IN"
+    body = {
+        "model": LLM_MODEL,
+        "messages": [
+            {"role": "system", "content": LESSON_PROMPT.replace("{LANG}", LANG_NAMES[lang])},
+            {"role": "user", "content": f"Red flags: {flags}\n\nTranscript:\n{history[-3000:]}"},
+        ],
+        "temperature": 0.3,
+        "max_tokens": 400,
+        "reasoning_effort": None,
+    }
+    headers = {**HEADERS, "Authorization": f"Bearer {API_KEY}"}
+    r = await _post(f"{BASE}/v1/chat/completions", headers=headers, json=body)
+    if r.status_code != 200:
+        raise HTTPException(502, f"LLM error {r.status_code}: {r.text[:300]}")
+    text = (r.json()["choices"][0]["message"].get("content") or "").strip()
+    return {"text": text, "lang": lang, "audio": await tts(text[:1500], lang, WARN_SPEAKER)}
 
 
 # Scenario scripts voiced by Bulbul so the stage demo works even without a live mic.
