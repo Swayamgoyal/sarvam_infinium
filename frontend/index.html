@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kavach · Scam Call Shield</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Tamil:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+<header>
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+  <div class="brand"><h1>Kavach <span style="color:var(--muted);font-weight:500">कवच</span></h1><p>Real-time shield against digital-arrest &amp; KYC scam calls, in the elder's own language</p></div>
+  <div class="pills">
+    <span class="pill">STT <b>Saaras v4</b></span>
+    <span class="pill">Reasoning <b>Sarvam-105B</b></span>
+    <span class="pill">Voice <b>Bulbul v3</b></span>
+  </div>
+</header>
+
+<main>
+  <!-- call panel -->
+  <section class="card">
+    <h2>Incoming call</h2>
+    <div class="phone" id="phone">
+      <div class="avatar" id="avatar">📞</div>
+      <div class="caller" id="caller">No active call</div>
+      <div class="callmeta" id="callmeta">Kavach is standing by</div>
+      <div class="wave" id="wave"></div>
+    </div>
+    <label class="f" for="scenario">Demo scenario</label>
+    <select id="scenario"></select>
+    <label class="f" for="wlang">Warn the elder in</label>
+    <select id="wlang">
+      <option value="auto">Same language as the call (auto)</option>
+      <option value="hi-IN">हिन्दी Hindi</option><option value="ta-IN">தமிழ் Tamil</option>
+      <option value="te-IN">తెలుగు Telugu</option><option value="kn-IN">ಕನ್ನಡ Kannada</option>
+      <option value="ml-IN">മലയാളം Malayalam</option><option value="bn-IN">বাংলা Bengali</option>
+      <option value="mr-IN">मराठी Marathi</option><option value="gu-IN">ગુજરાતી Gujarati</option>
+      <option value="pa-IN">ਪੰਜਾਬੀ Punjabi</option><option value="od-IN">ଓଡ଼ିଆ Odia</option>
+      <option value="en-IN">English</option>
+    </select>
+    <div class="btns">
+      <button class="b-demo" id="btnDemo">▶ Play demo call</button>
+      <button class="b-mic" id="btnMic">🎙️ Live mic</button>
+      <button class="b-reset" id="btnReset">↺ Reset</button>
+      <button class="b-tool" id="btnUpload">📁 Check a voice note</button>
+      <button class="b-tool" id="btnLesson" disabled>🎓 Explain to elder</button>
+      <button class="b-report" id="btnReport" onclick="downloadReport()" disabled>📄 Evidence report for cybercrime.gov.in</button>
+      <input type="file" id="fileIn" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav" hidden>
+    </div>
+    <div class="hint" id="hint">Live mic: put the real call on speaker near the laptop.</div>
+  </section>
+
+  <!-- risk panel -->
+  <section class="card">
+    <h2>Scam risk <span class="sp" id="lat"></span></h2>
+    <div class="risk-top">
+      <div class="gauge" id="gauge"><div class="v"><div class="num" id="riskNum">0</div><div class="lbl">risk score</div></div></div>
+      <div>
+        <div class="verdict" id="verdict" style="color:var(--safe)">Call looks safe</div>
+        <div id="stype"></div>
+        <div class="reason" id="reason">Waiting for the conversation to start.</div>
+      </div>
+    </div>
+    <div class="ladder" id="ladder"></div>
+    <div class="spark">
+      <div class="t"><span>Risk over the call</span><span>alert at 70</span></div>
+      <svg viewBox="0 0 300 64" preserveAspectRatio="none" id="spark"></svg>
+    </div>
+  </section>
+
+  <!-- flags panel -->
+  <section class="card flags-card">
+    <h2>Red flags · with evidence</h2>
+    <div id="flags"></div>
+    <div class="family" id="family">
+      <div class="h">📲 Family alert · SMS draft <button id="btnCopy">Copy</button></div>
+      <p id="familyTxt"></p>
+    </div>
+    <div class="lesson" id="lesson">
+      <div class="h">🎓 Lesson for the elder (spoken by Bulbul)</div>
+      <p id="lessonTxt"></p>
+    </div>
+  </section>
+
+  <!-- transcript -->
+  <section class="card tx-card">
+    <h2>Live transcript <span class="sp">auto language detection · code-mixed</span></h2>
+    <div id="tx"><div class="empty">The call transcript will stream here.</div></div>
+  </section>
+</main>
+
+<div id="overlay">
+  <div class="abox">
+    <div class="shield">🛡️</div>
+    <div class="big">SCAM CALL — HANG UP NOW</div>
+    <div class="warn" id="warnTxt"></div>
+    <div class="meta" id="warnMeta"></div>
+    <div class="acts">
+      <button id="btnReplay">🔊 Replay warning</button>
+      <a href="tel:1930" style="text-decoration:none"><button>📞 Call 1930 cyber helpline</button></a>
+      <button onclick="downloadReport()">📄 Evidence report</button>
+      <button class="g" id="btnClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
